@@ -13,12 +13,16 @@ OmniSchema/
 ## Features
 
 - Visual schema canvas with drag-and-drop nodes
-- Define entities and fields
-- Define relations (one-to-one, one-to-many, many-to-many)
+- Create tables with custom fields and datatypes
+- Delete tables (also removes related edges automatically)
+- Define relations (one-to-many) between tables
+- Field type indicators — 🔑 primary key, 🔗 foreign key
 - Generate SQL (PostgreSQL, MySQL, SQLite)
 - Generate ORM schemas (Prisma, Drizzle, Sequelize)
 - Generate Mongoose schemas
 - Generate TypeScript interfaces
+- Copy generated schema to clipboard with one click
+- Toast notifications for all actions
 
 ## Getting Started
 
@@ -49,7 +53,7 @@ Runs on `http://localhost:3000`
 | POST | `/entity` | Create an entity |
 | GET | `/entity` | Get all entities |
 | GET | `/entity/:id` | Get entity by ID |
-| DELETE | `/entity/:id` | Delete entity |
+| DELETE | `/entity/:id` | Delete entity + its relations |
 | POST | `/relation` | Create a relation |
 | GET | `/relation` | Get all relations |
 | GET | `/generate/:type` | Generate schema (`postgres`, `mysql`, `sqlite`, `mongoose`, `prisma`, `drizzle`, `sequelize`, `typescript`) |
@@ -58,4 +62,4 @@ Runs on `http://localhost:3000`
 
 **Backend:** Node.js, Express, TypeScript
 
-**Frontend:** Next.js 15, ReactFlow, Zustand, Axios, Tailwind CSS
+**Frontend:** Next.js 15, ReactFlow, Axios, Tailwind CSS, react-hot-toast
