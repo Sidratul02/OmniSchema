@@ -16,6 +16,15 @@ export const mapMySQLDatatype = (
     case "boolean":
       return "BOOLEAN";
 
+    case "date":
+      return "DATETIME";
+
+    case "json":
+      return "JSON";
+
+    case "text":
+      return "TEXT";
+
     default:
       return "VARCHAR(255)";
   }

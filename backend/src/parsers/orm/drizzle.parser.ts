@@ -1,5 +1,7 @@
 import { schemaStore }
 from "../../schema-engine/schema.store";
+import { DatabaseSchema }
+from "../../schema-engine/schema.types";
 
 
 const mapDrizzleDatatype = (
@@ -26,7 +28,9 @@ const mapDrizzleDatatype = (
 };
 
 
-export const generateDrizzle = (): string => {
+export const generateDrizzle = (
+  schema: DatabaseSchema = schemaStore
+): string => {
 
   let code = "";
 
@@ -40,7 +44,7 @@ export const generateDrizzle = (): string => {
 } from "drizzle-orm/pg-core";\n\n`;
 
 
-  schemaStore.entities.forEach((entity) => {
+  schema.entities.forEach((entity) => {
 
     code +=
 `export const ${entity.name.toLowerCase()} = pgTable("${entity.name.toLowerCase()}", {\n`;
@@ -80,7 +84,7 @@ export const generateDrizzle = (): string => {
 
 
     // RELATIONS
-    schemaStore.relations.forEach((relation) => {
+    schema.relations.forEach((relation) => {
 
       if (
         relation.type === "one-to-many" &&

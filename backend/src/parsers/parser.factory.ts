@@ -21,36 +21,43 @@ from "./typescript/interface.parser";
 
 import { generateSequelize }
 from "./orm/sequelize.parser";
+import { DatabaseSchema }
+from "../schema-engine/schema.types";
+import { schemaStore }
+from "../schema-engine/schema.store";
 
 export class ParserFactory {
 
-  static generate(type: string) {
+  static generate(
+    type: string,
+    schema: DatabaseSchema = schemaStore
+  ) {
 
     switch(type) {
 
       case "postgres":
-        return generatePostgresSQL();
+        return generatePostgresSQL(schema);
 
       case "mongoose":
-        return generateMongooseSchema();
+        return generateMongooseSchema(schema);
 
       case "mysql":
-        return generateMySQL();
+        return generateMySQL(schema);
 
       case "sqlite":
-        return generateSQLite();
+        return generateSQLite(schema);
 
       case "prisma":
-        return generatePrisma();
+        return generatePrisma(schema);
 
       case "drizzle":
-        return generateDrizzle();
+        return generateDrizzle(schema);
  
       case "typescript":
-        return generateTypescriptInterfaces();
+        return generateTypescriptInterfaces(schema);
 
       case "sequelize":
-       return generateSequelize(); 
+       return generateSequelize(schema); 
       default:
         throw new Error(
           "Unsupported parser"

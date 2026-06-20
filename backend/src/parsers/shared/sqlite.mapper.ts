@@ -16,6 +16,15 @@ export const mapSQLiteDatatype = (
     case "boolean":
       return "INTEGER";
 
+    case "date":
+      return "TEXT";
+
+    case "json":
+      return "TEXT";
+
+    case "text":
+      return "TEXT";
+
     default:
       return "TEXT";
   }

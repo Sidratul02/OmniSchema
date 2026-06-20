@@ -1,5 +1,7 @@
 import { schemaStore }
 from "../../schema-engine/schema.store";
+import { DatabaseSchema }
+from "../../schema-engine/schema.types";
 
 
 const mapPrismaDatatype = (
@@ -26,11 +28,13 @@ const mapPrismaDatatype = (
 };
 
 
-export const generatePrisma = (): string => {
+export const generatePrisma = (
+  schema: DatabaseSchema = schemaStore
+): string => {
 
   let prisma = "";
 
-  schemaStore.entities.forEach((entity) => {
+  schema.entities.forEach((entity) => {
 
     prisma += `model ${entity.name} {\n`;
 
@@ -57,7 +61,7 @@ export const generatePrisma = (): string => {
     });
 
     // RELATIONS
-    schemaStore.relations.forEach((relation) => {
+    schema.relations.forEach((relation) => {
 
       if (
         relation.type === "one-to-many" &&

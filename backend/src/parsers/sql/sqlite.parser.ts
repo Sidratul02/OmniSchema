@@ -1,15 +1,19 @@
 import { schemaStore }
 from "../../schema-engine/schema.store";
+import { DatabaseSchema }
+from "../../schema-engine/schema.types";
 
 import { mapSQLiteDatatype }
 from "../shared/sqlite.mapper";
 
 
-export const generateSQLite = (): string => {
+export const generateSQLite = (
+  schema: DatabaseSchema = schemaStore
+): string => {
 
   let sql = "";
 
-  schemaStore.entities.forEach((entity) => {
+  schema.entities.forEach((entity) => {
 
     sql += `CREATE TABLE ${entity.name.toLowerCase()} (\n`;
 
@@ -45,7 +49,7 @@ export const generateSQLite = (): string => {
 
 
     // RELATION FIELDS
-    schemaStore.relations.forEach((relation) => {
+    schema.relations.forEach((relation) => {
 
       // one-to-many
       if (

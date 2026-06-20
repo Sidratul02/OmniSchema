@@ -15,7 +15,7 @@ export interface Entity {
 export interface Relation {
   from: string;
   to: string;
-  type: "one-to-one" | "one-to-many" | "many-to-many";
+  type: string;
 }
 
 export interface DatabaseSchema {

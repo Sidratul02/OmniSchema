@@ -1,10 +1,13 @@
 import { schemaStore } from "../../schema-engine/schema.store";
+import { DatabaseSchema } from "../../schema-engine/schema.types";
 
-export const generateMongooseSchema = (): string => {
+export const generateMongooseSchema = (
+  schema: DatabaseSchema = schemaStore
+): string => {
 
   let code = "";
 
-  schemaStore.entities.forEach((entity) => {
+  schema.entities.forEach((entity) => {
 
     code += `const mongoose = require("mongoose");\n\n`;
 

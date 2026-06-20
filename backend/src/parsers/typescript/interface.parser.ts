@@ -1,5 +1,7 @@
 import { schemaStore }
 from "../../schema-engine/schema.store";
+import { DatabaseSchema }
+from "../../schema-engine/schema.types";
 
 
 const mapTypescriptDatatype = (
@@ -26,11 +28,13 @@ const mapTypescriptDatatype = (
 };
 
 
-export const generateTypescriptInterfaces = (): string => {
+export const generateTypescriptInterfaces = (
+  schema: DatabaseSchema = schemaStore
+): string => {
 
   let code = "";
 
-  schemaStore.entities.forEach((entity) => {
+  schema.entities.forEach((entity) => {
 
     code +=
 `export interface ${entity.name} {\n`;
@@ -43,7 +47,7 @@ export const generateTypescriptInterfaces = (): string => {
     });
 
     // RELATION FIELDS
-    schemaStore.relations.forEach((relation) => {
+    schema.relations.forEach((relation) => {
 
       if (
         relation.type === "one-to-many" &&

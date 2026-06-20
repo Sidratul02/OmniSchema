@@ -1,11 +1,13 @@
 import { schemaStore } from "../../schema-engine/schema.store";
+import { DatabaseSchema } from "../../schema-engine/schema.types";
 import { mapMySQLDatatype } from "../shared/mysql.mapper";
-
-export const generateMySQL = (): string => {
+export const generateMySQL = (
+  schema: DatabaseSchema = schemaStore
+): string => {
 
   let sql = "";
 
-  schemaStore.entities.forEach((entity) => {
+  schema.entities.forEach((entity) => {
 
     sql += `CREATE TABLE ${entity.name.toLowerCase()} (\n`;
 
@@ -41,7 +43,7 @@ export const generateMySQL = (): string => {
 
 
     // RELATION FIELDS
-    schemaStore.relations.forEach((relation) => {
+    schema.relations.forEach((relation) => {
 
       // one-to-many
       if (

@@ -16,6 +16,15 @@ export const mapSQLDatatype = (
     case "boolean":
       return "BOOLEAN";
 
+    case "date":
+      return "TIMESTAMP";
+
+    case "json":
+      return "JSONB";
+
+    case "text":
+      return "TEXT";
+
     default:
       return "TEXT";
   }

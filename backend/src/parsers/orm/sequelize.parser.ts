@@ -1,5 +1,7 @@
 import { schemaStore }
 from "../../schema-engine/schema.store";
+import { DatabaseSchema }
+from "../../schema-engine/schema.types";
 
 
 const mapSequelizeDatatype = (
@@ -26,14 +28,16 @@ const mapSequelizeDatatype = (
 };
 
 
-export const generateSequelize = (): string => {
+export const generateSequelize = (
+  schema: DatabaseSchema = schemaStore
+): string => {
 
   let code = "";
 
   code +=
 `const { DataTypes } = require("sequelize");\n\n`;
 
-  schemaStore.entities.forEach((entity) => {
+  schema.entities.forEach((entity) => {
 
     code +=
 `const ${entity.name} = sequelize.define("${entity.name}", {\n`;
@@ -72,7 +76,7 @@ export const generateSequelize = (): string => {
 
 
     // RELATIONS
-    schemaStore.relations.forEach((relation) => {
+    schema.relations.forEach((relation) => {
 
       if (
         relation.type === "one-to-many" &&
