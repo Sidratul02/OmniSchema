@@ -7,27 +7,34 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String    @id @default(cuid())
+  email     String    @unique
   password  String
   name      String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  projects  Project[]
 }
 
 model Project {
   id        String     @id @default(cuid())
   name      String
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
   entities  Entity[]
   relations Relation[]
+
+  @@index([userId])
 }
 
 model Entity {
-  id        String   @id
+  id        String  @id
   name      String
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   fields    Field[]
+
+  @@index([projectId])
 }
 
 model Field {
@@ -38,7 +45,7 @@ model Field {
   unique   Boolean @default(false)
   nullable Boolean @default(true)
   entityId String
-  entity   Entity  @relation(fields: [entityId], references: [id])
+  entity   Entity  @relation(fields: [entityId], references: [id], onDelete: Cascade)
 }
 
 model Relation {
@@ -47,5 +54,7 @@ model Relation {
   to        String
   type      String
   projectId String
-  project   Project @relation(fields: [projectId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }

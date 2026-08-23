@@ -4,7 +4,7 @@
     "outDir": "./dist",
     "module": "commonjs",
     "target": "es2020",
-    "types": ["node"],
+    "typeRoots": ["./src/types", "./node_modules/@types"],
     "esModuleInterop": true,
     "sourceMap": true,
     "declaration": true,

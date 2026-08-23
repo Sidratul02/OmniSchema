@@ -1,28 +1,46 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import { DEFAULT_PROJECT_ID } from "../constants/default-project";
+import { getUserProject } from "../lib/project";
+import { authenticate } from "../middleware/auth.middleware";
+import { createEntitySchema, parseBody, updateEntitySchema } from "../validators/schemas";
 
 const router = Router();
 
+router.use(authenticate);
 
-// CREATE
+// POST /entity
 router.post("/", async (req, res) => {
   try {
-    const { id, name, fields } = req.body;
+    const parsed = parseBody(createEntitySchema, req.body);
 
-    const existing = await prisma.entity.findUnique({ where: { id } });
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, message: parsed.message });
+    }
+
+    const { id, name, fields } = parsed.data;
+    const safeId = id.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+
+    if (!safeId) {
+      return res.status(400).json({ success: false, message: "Invalid entity id" });
+    }
+
+    const project = await getUserProject(req.userId!);
+
+    const existing = await prisma.entity.findFirst({
+      where: { id: safeId, projectId: project.id }
+    });
 
     if (existing) {
-      return res.json({ success: false, message: "Entity already exists" });
+      return res.status(409).json({ success: false, message: "Entity already exists" });
     }
 
     await prisma.entity.create({
       data: {
-        id,
+        id: safeId,
         name,
-        projectId: DEFAULT_PROJECT_ID,
+        projectId: project.id,
         fields: {
-          create: fields.map((field: any) => ({
+          create: fields.map((field) => ({
             name: field.name,
             datatype: field.datatype,
             primary: field.primary || false,
@@ -33,48 +51,108 @@ router.post("/", async (req, res) => {
       }
     });
 
-    return res.json({ success: true });
-
+    return res.status(201).json({ success: true });
   } catch (error) {
-    console.log(error);
-    return res.json({ success: false, message: "Failed to create entity" });
+    console.error("[Create Entity Error]", error);
+    return res.status(500).json({ success: false, message: "Failed to create entity" });
   }
 });
 
-
-// GET ALL
-router.get("/", async (_, res) => {
+// GET /entity
+router.get("/", async (req, res) => {
   try {
+    const project = await getUserProject(req.userId!);
+
     const entities = await prisma.entity.findMany({
-      where: { projectId: DEFAULT_PROJECT_ID },
-      include: { fields: true }
+      where: { projectId: project.id },
+      include: { fields: true },
+      orderBy: { name: "asc" }
     });
 
     return res.json({ success: true, data: entities });
-
   } catch (error) {
-    console.log(error);
-    return res.json({ success: false, message: "Failed to fetch entities" });
+    console.error("[Fetch Entities Error]", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch entities" });
   }
 });
 
+// PUT /entity/:id
+router.put("/:id", async (req, res) => {
+  try {
+    const parsed = parseBody(updateEntitySchema, req.body);
 
-// DELETE
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, message: parsed.message });
+    }
+
+    const { id } = req.params;
+    const project = await getUserProject(req.userId!);
+
+    const existing = await prisma.entity.findFirst({
+      where: { id, projectId: project.id }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, message: "Entity not found" });
+    }
+
+    const { name, fields } = parsed.data;
+
+    // Use a transaction to ensure atomicity
+    await prisma.$transaction([
+      prisma.field.deleteMany({ where: { entityId: id } }),
+      prisma.entity.update({
+        where: { id },
+        data: {
+          name,
+          fields: {
+            create: fields.map((field) => ({
+              name: field.name,
+              datatype: field.datatype,
+              primary: field.primary || false,
+              unique: field.unique || false,
+              nullable: field.nullable ?? true
+            }))
+          }
+        }
+      })
+    ]);
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("[Update Entity Error]", error);
+    return res.status(500).json({ success: false, message: "Failed to update entity" });
+  }
+});
+
+// DELETE /entity/:id
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const project = await getUserProject(req.userId!);
 
-    await prisma.field.deleteMany({ where: { entityId: id } });
-    await prisma.relation.deleteMany({ where: { OR: [{ from: id }, { to: id }] } });
-    await prisma.entity.delete({ where: { id } });
+    const existing = await prisma.entity.findFirst({
+      where: { id, projectId: project.id }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, message: "Entity not found" });
+    }
+
+    // Use a transaction to ensure atomicity
+    await prisma.$transaction([
+      prisma.field.deleteMany({ where: { entityId: id } }),
+      prisma.relation.deleteMany({
+        where: { projectId: project.id, OR: [{ from: id }, { to: id }] }
+      }),
+      prisma.entity.delete({ where: { id } })
+    ]);
 
     return res.json({ success: true });
-
   } catch (error) {
-    console.log(error);
-    return res.json({ success: false, message: "Failed to delete entity" });
+    console.error("[Delete Entity Error]", error);
+    return res.status(500).json({ success: false, message: "Failed to delete entity" });
   }
 });
-
 
 export default router;

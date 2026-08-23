@@ -1,71 +1,52 @@
-import { schemaStore } from "../../schema-engine/schema.store";
 import { DatabaseSchema } from "../../schema-engine/schema.types";
 import { mapMySQLDatatype } from "../shared/mysql.mapper";
-export const generateMySQL = (
-  schema: DatabaseSchema = schemaStore
-): string => {
 
+export const generateMySQL = (schema: DatabaseSchema): string => {
   let sql = "";
 
   schema.entities.forEach((entity) => {
-
     sql += `CREATE TABLE ${entity.name.toLowerCase()} (\n`;
-
     const fieldLines: string[] = [];
 
-    // NORMAL FIELDS
     entity.fields.forEach((field) => {
-
-      let line = `  ${field.name} `;
-
-      // DATATYPE MAPPING
-      line += mapMySQLDatatype(
-        field.datatype
-      );
-
-      // PRIMARY KEY
-      if (field.primary) {
-        line += " PRIMARY KEY";
-      }
-
-      // UNIQUE
-      if (field.unique) {
-        line += " UNIQUE";
-      }
-
-      // NOT NULL
-      if (!field.nullable) {
-        line += " NOT NULL";
-      }
-
+      let line = `  ${field.name} ${mapMySQLDatatype(field.datatype)}`;
+      if (field.primary) line += " PRIMARY KEY";
+      if (field.unique) line += " UNIQUE";
+      if (!field.nullable) line += " NOT NULL";
       fieldLines.push(line);
     });
 
-
-    // RELATION FIELDS
+    // one-to-one: FK on the "to" side
     schema.relations.forEach((relation) => {
-
-      // one-to-many
-      if (
-        relation.type === "one-to-many" &&
-        relation.to.toLowerCase() ===
-        entity.name.toLowerCase()
-      ) {
-
-        const foreignKeyField =
-          `  ${relation.from}_id CHAR(36) REFERENCES ${relation.from}(id)`;
-
-        fieldLines.push(
-          foreignKeyField
-        );
+      if (relation.type === "one-to-one" && relation.to === entity.id) {
+        fieldLines.push(`  ${relation.from}_id CHAR(36) UNIQUE REFERENCES ${relation.from}(id)`);
       }
+    });
 
+    // one-to-many: FK on the "to" side
+    schema.relations.forEach((relation) => {
+      if (relation.type === "one-to-many" && relation.to === entity.id) {
+        fieldLines.push(`  ${relation.from}_id CHAR(36) REFERENCES ${relation.from}(id)`);
+      }
     });
 
     sql += fieldLines.join(",\n");
-
     sql += `\n);\n\n`;
+  });
 
+  // many-to-many: junction tables
+  schema.relations.forEach((relation) => {
+    if (relation.type !== "many-to-many") return;
+    const fromEntity = schema.entities.find((e) => e.id === relation.from);
+    const toEntity = schema.entities.find((e) => e.id === relation.to);
+    if (!fromEntity || !toEntity) return;
+
+    const junctionTable = `${relation.from}_${relation.to}`;
+    sql += `CREATE TABLE ${junctionTable} (\n`;
+    sql += `  ${relation.from}_id CHAR(36) REFERENCES ${fromEntity.name.toLowerCase()}(id),\n`;
+    sql += `  ${relation.to}_id CHAR(36) REFERENCES ${toEntity.name.toLowerCase()}(id),\n`;
+    sql += `  PRIMARY KEY (${relation.from}_id, ${relation.to}_id)\n`;
+    sql += `);\n\n`;
   });
 
   return sql;

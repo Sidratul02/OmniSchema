@@ -1,40 +1,39 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import rateLimit from "express-rate-limit";
 import { prisma } from "../lib/prisma";
-import { DEFAULT_PROJECT_ID } from "../constants/default-project";
+import { createUserProject } from "../lib/project";
+import { JWT_SECRET } from "../lib/jwt";
+import { loginSchema, parseBody, signupSchema } from "../validators/schemas";
+import { authenticate } from "../middleware/auth.middleware";
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || "omnischema-secret";
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { success: false, message: "Too many attempts, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
-// ENSURE DEFAULT PROJECT EXISTS
-const ensureDefaultProject = async () => {
-  const existing = await prisma.project.findUnique({
-    where: { id: DEFAULT_PROJECT_ID }
-  });
-
-  if (!existing) {
-    await prisma.project.create({
-      data: { id: DEFAULT_PROJECT_ID, name: "Default Project" }
-    });
-  }
-};
-
-
-// SIGNUP
-router.post("/signup", async (req, res) => {
+// POST /auth/signup
+router.post("/signup", authLimiter, async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const parsed = parseBody(signupSchema, req.body);
 
-    if (!name || !email || !password) {
-      return res.json({ success: false, message: "All fields are required" });
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, message: parsed.message });
     }
+
+    const { name, password } = parsed.data;
+    const email = parsed.data.email.toLowerCase();
 
     const existing = await prisma.user.findUnique({ where: { email } });
 
     if (existing) {
-      return res.json({ success: false, message: "Email already in use" });
+      return res.status(409).json({ success: false, message: "Email already in use" });
     }
 
     const hashed = await bcrypt.hash(password, 10);
@@ -43,45 +42,44 @@ router.post("/signup", async (req, res) => {
       data: { name, email, password: hashed }
     });
 
-    await ensureDefaultProject();
+    await createUserProject(user.id, `${name}'s Project`);
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
 
-    return res.json({
+    return res.status(201).json({
       success: true,
       token,
       user: { id: user.id, name: user.name, email: user.email }
     });
-
   } catch (error) {
-    console.log(error);
-    return res.json({ success: false, message: "Signup failed" });
+    console.error("[Signup Error]", error);
+    return res.status(500).json({ success: false, message: "Signup failed" });
   }
 });
 
-
-// LOGIN
-router.post("/login", async (req, res) => {
+// POST /auth/login
+router.post("/login", authLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const parsed = parseBody(loginSchema, req.body);
 
-    if (!email || !password) {
-      return res.json({ success: false, message: "All fields are required" });
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, message: parsed.message });
     }
+
+    const email = parsed.data.email.toLowerCase();
+    const { password } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      return res.json({ success: false, message: "Invalid credentials" });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
     const valid = await bcrypt.compare(password, user.password);
 
     if (!valid) {
-      return res.json({ success: false, message: "Invalid credentials" });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
-
-    await ensureDefaultProject();
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
 
@@ -90,12 +88,29 @@ router.post("/login", async (req, res) => {
       token,
       user: { id: user.id, name: user.name, email: user.email }
     });
-
   } catch (error) {
-    console.log(error);
-    return res.json({ success: false, message: "Login failed" });
+    console.error("[Login Error]", error);
+    return res.status(500).json({ success: false, message: "Login failed" });
   }
 });
 
+// GET /auth/me
+router.get("/me", authenticate, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId! },
+      select: { id: true, name: true, email: true, createdAt: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.json({ success: true, user });
+  } catch (error) {
+    console.error("[Get Me Error]", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch user" });
+  }
+});
 
 export default router;
