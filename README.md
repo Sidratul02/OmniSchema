@@ -2,7 +2,9 @@
 
 A full-stack visual database schema builder. Design your database visually on a canvas, define entities and relations, then export production-ready code in 8 formats — or describe your app in plain English and let AI generate the schema for you.
 
-![OmniSchema Dashboard](https://img.shields.io/badge/status-active-brightgreen) ![TypeScript](https://img.shields.io/badge/TypeScript-5%2F6-blue) ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![Prisma](https://img.shields.io/badge/Prisma-v7-2D3748)
+![Status](https://img.shields.io/badge/status-live-brightgreen) ![TypeScript](https://img.shields.io/badge/TypeScript-6-blue) ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![Prisma](https://img.shields.io/badge/Prisma-v7-2D3748) ![Deployed on Vercel](https://img.shields.io/badge/frontend-Vercel-black) ![Deployed on Render](https://img.shields.io/badge/backend-Render-46E3B7)
+
+**Live Demo:** [https://omni-schema.vercel.app](https://omni-schema.vercel.app)
 
 ---
 
@@ -57,7 +59,7 @@ OmniSchema/
 │   │   └── schema.prisma          # DB models: User, Project, Entity, Field, Relation
 │   ├── src/
 │   │   ├── lib/
-│   │   │   ├── prisma.ts          # Prisma client singleton
+│   │   │   ├── prisma.ts          # Prisma client singleton (Neon adapter)
 │   │   │   ├── jwt.ts             # JWT secret export
 │   │   │   └── project.ts        # getUserProject helper
 │   │   ├── middleware/
@@ -107,6 +109,8 @@ OmniSchema/
 ---
 
 ## REST API Reference
+
+**Base URL (production):** `https://omnischema.onrender.com`
 
 All protected routes require `Authorization: Bearer <token>` header.
 
@@ -203,7 +207,7 @@ model Relation {
 
 ---
 
-## Getting Started
+## Getting Started (Local Development)
 
 ### Prerequisites
 
@@ -223,15 +227,10 @@ cd OmniSchema
 ```bash
 cd backend
 npm install
-```
-
-Create your `.env` file:
-
-```bash
 cp .env.example .env
 ```
 
-Fill in the values:
+Fill in `.env`:
 
 ```env
 DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
@@ -242,20 +241,15 @@ PORT=5000
 FRONTEND_URL="http://localhost:3000"
 ```
 
-Push the database schema:
+Push the database schema and start:
 
 ```bash
 npm run db:generate
 npm run db:push
-```
-
-Start the backend:
-
-```bash
 npm run dev
 ```
 
-The API will be running at `http://localhost:5000`.
+Backend runs at `http://localhost:5000`.
 
 ### 3. Frontend setup
 
@@ -264,13 +258,11 @@ cd ../frontend
 npm install
 ```
 
-Create a `.env.local` file:
+Create `frontend/.env.local`:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
-
-Start the frontend:
 
 ```bash
 npm run dev
@@ -278,11 +270,40 @@ npm run dev
 
 Open `http://localhost:3000` in your browser.
 
+> **Note:** Both terminals must stay open simultaneously — one for the backend, one for the frontend.
+
+---
+
+## Deployment
+
+The project is deployed using:
+
+| Service | Platform | URL |
+|---|---|---|
+| Frontend | Vercel | [https://omni-schema.vercel.app](https://omni-schema.vercel.app) |
+| Backend | Render | [https://omnischema.onrender.com](https://omnischema.onrender.com) |
+| Database | Neon PostgreSQL | serverless |
+
+### Deploy your own
+
+**Backend on Render:**
+1. New Web Service → connect `Sidratul02/OmniSchema`
+2. Root Directory: `backend`
+3. Build Command: `npm install && npm run build`
+4. Start Command: `node dist/server.js`
+5. Add environment variables (see table below)
+
+**Frontend on Vercel:**
+1. New Project → import `Sidratul02/OmniSchema`
+2. Root Directory: `frontend`
+3. Add `NEXT_PUBLIC_API_URL` = your Render backend URL
+4. Deploy
+
 ---
 
 ## Export Format Examples
 
-Given a `users` entity with a `one-to-many` relation to `posts`, OmniSchema generates:
+Given a `users` entity with a `one-to-many` relation to `posts`:
 
 **PostgreSQL**
 ```sql
@@ -368,7 +389,7 @@ Example prompts:
 ### Backend
 ```bash
 npm run dev          # Start with ts-node-dev (hot reload)
-npm run build        # Compile TypeScript to dist/
+npm run build        # Generate Prisma client + compile TypeScript to dist/
 npm run start        # Run compiled dist/server.js
 npm run db:generate  # Generate Prisma client
 npm run db:push      # Push schema to database
@@ -395,6 +416,7 @@ npm run lint         # Run ESLint
 | `OPENAI_API_KEY` | ⚠️ | OpenAI API key (required for AI generation) |
 | `OPENAI_MODEL` | ❌ | OpenAI model to use (default: `gpt-3.5-turbo`) |
 | `PORT` | ❌ | Server port (default: `5000`) |
+| `NODE_ENV` | ❌ | Environment (`development` or `production`) |
 | `FRONTEND_URL` | ❌ | Allowed CORS origin (default: `http://localhost:3000`) |
 
 ### Frontend (`frontend/.env.local`)
@@ -404,3 +426,7 @@ npm run lint         # Run ESLint
 | `NEXT_PUBLIC_API_URL` | ❌ | Backend API URL (default: `http://localhost:5000`) |
 
 ---
+
+## License
+
+MIT
