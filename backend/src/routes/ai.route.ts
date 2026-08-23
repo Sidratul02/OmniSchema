@@ -9,9 +9,9 @@ const router = Router();
 
 router.use(authenticate);
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 const SYSTEM_PROMPT = `You are a database schema designer. When given a description, return ONLY valid JSON in this exact format:
 
@@ -57,7 +57,7 @@ router.post("/generate", async (req, res) => {
       return res.status(400).json({ success: false, message: parsed.message });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.OPENAI_API_KEY || !openai) {
       return res.status(503).json({ success: false, message: "AI generation is not available" });
     }
 
