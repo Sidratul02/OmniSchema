@@ -4,7 +4,7 @@
     "outDir": "./dist",
     "module": "commonjs",
     "target": "es2020",
-    "typeRoots": ["./src/types", "./node_modules/@types"],
+    "typeRoots": ["./node_modules/@types"],
     "esModuleInterop": true,
     "sourceMap": true,
     "declaration": true,
@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "moduleDetection": "force"
   },
+  "files": ["src/types/express.d.ts"],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
