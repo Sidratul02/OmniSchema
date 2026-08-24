@@ -6,6 +6,9 @@ A full-stack visual database schema builder. Design your database visually on a 
 
 **Live Demo:** [https://omni-schema.vercel.app](https://omni-schema.vercel.app)
 
+<img width="1366" height="595" alt="Screenshot (331)" src="https://github.com/user-attachments/assets/7a6ad2d2-ee6f-462d-92f8-bf90fa708990" />
+<img width="1366" height="592" alt="Screenshot (333)" src="https://github.com/user-attachments/assets/ab6fde75-bc4f-476b-9311-7d62218a72bc" />
+
 ---
 
 ## Features
